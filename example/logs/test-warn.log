@@ -1,0 +1,4 @@
+2018-05-04 17:31:56.16 [ERROR] <main.go.output:36> => test error log out test1
+2018-05-04 17:31:56.16 [FATAL] <main.go.output:37> => test fatal log out test1
+2018-05-04 17:31:56.16 [ERROR] <main.go.output:45> => test error log out test2
+2018-05-04 17:31:56.16 [FATAL] <main.go.output:46> => test fatal log out test2
