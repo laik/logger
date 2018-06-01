@@ -1,6 +1,6 @@
 package main
 
-import logger "github.com/laik/study/logger"
+import logger "github.com/laik/logger"
 
 /*
 	后续实现功能:
