@@ -27,8 +27,10 @@ var (
 	wg            sync.WaitGroup
 )
 
+// SetConsole ?
 func SetConsole() { consoleOutPut = true }
 
+// UnsetConsole ?
 func UnsetConsole() { consoleOutPut = false }
 
 func shardingInstance() bool {
@@ -39,6 +41,7 @@ func shardingInstance() bool {
 	return true
 }
 
+// InitLogger ?
 func InitLogger(cfg map[string]interface{}) {
 
 	exists := shardingInstance()
@@ -185,6 +188,7 @@ func getCallerStackInfo() (format string) {
 
 func getTimeLayout() string { return time.Now().Format(LAYOUT) }
 
+// Flush ?
 func Flush() { wg.Wait() }
 
 func _asyncWrite() {
@@ -243,6 +247,7 @@ func _write(out Logger, file *os.File, level int, format string, args ...interfa
 
 }
 
+// Logger define golbal interface
 type Logger interface {
 	SetLevel(level int)
 	Debug(format string, args ...interface{})
@@ -255,6 +260,11 @@ type Logger interface {
 	GetLevel() int
 }
 
+// LogFile output info to file [info,warn]
+// [] 1.文件体积
+// [] 2.文件日期格式,生命周期
+// [] 3.备份压缩
+
 type LogFile struct {
 	level int
 	path  string
@@ -263,7 +273,22 @@ type LogFile struct {
 	warn  *os.File
 }
 
+// 2.目录不存在问题
+func directory(dir string) {
+	if _, e := os.Stat(dir); os.IsNotExist(e) {
+		err := os.Mkdir(dir, os.ModePerm)
+		if err != nil {
+			fmt.Fprintf(os.Stdout, "directory create error %s\n", dir)
+			os.Exit(1)
+		}
+	}
+}
+
+// NewLogFile ?
 func NewLogFile(level int, path string, file string) Logger {
+
+	// directory check if not exists then created
+	directory(path)
 
 	logfile, err := os.OpenFile(fmt.Sprintf("%s%s-info.log", path, file), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
 

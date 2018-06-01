@@ -1,31 +1,28 @@
 package logger
 
 import "testing"
+import "os"
+import . "github.com/smartystreets/goconvey/convey"
 
 func TestFileLogger(t *testing.T) {
+	Convey("first test", t, func() {
+		return
+	})
+}
 
-	_logger := NewLogFile(DEBUG, "example/logs/", "test")
+func TestDirectoryCheck(t *testing.T) {
+	Convey("create test directory in ./log2", t, func() {
 
-	defer _logger.Close()
+		directory("./log2")
 
-	_logger.Debug("deubg %s\n", "aaa")
+		Convey("check exists?", func() {
 
-	_logger.SetLevel(ERROR)
+			if _, e := os.Stat("./log2"); os.IsNotExist(e) {
+				So(e, ShouldBeError)
+			} else {
+				os.Remove("./log2")
+			}
+		})
 
-	_logger.Error("error %s\n", "aaa")
-
-	_logger.SetLevel(TRACE)
-
-	_logger.Trace("trace %s\n", "aaa")
-
-	_c_logger := NewLogConsole(DEBUG)
-
-	_c_logger.SetLevel(DEBUG)
-
-	_c_logger.Debug("c_debug %s\n", "dsa")
-
-	_c_logger.SetLevel(ERROR)
-
-	_c_logger.Error("c_error %s\n", "dsa")
-
+	})
 }
