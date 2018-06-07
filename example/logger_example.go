@@ -1,6 +1,12 @@
 package main
 
-import logger "github.com/laik/logger"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	logger "github.com/laik/logger"
+)
 
 /*
 	后续实现功能:
@@ -10,14 +16,10 @@ import logger "github.com/laik/logger"
 	[√]	4.单例模式(防止在多个层级初始化)
 	[√]	5.异步写日志
 	[]  6.切分方式(小时/天/星期/月/体积)
+	[√] 7.启动备份上一次的日志文件
 */
 
 func output() {
-	// _c_log := logger.NewLogConsole(logger.DEBUG)
-	// _f_log := logger.NewLogFile(logger.DEBUG, "logs/", "logger-demo")
-
-	// _c_log.Debug("console output %s\n", "test console logger out...")
-	// _f_log.Debug("console output %s\n", "test file logger out...")
 
 	cfg := make(map[string]interface{}, 0)
 
@@ -26,7 +28,7 @@ func output() {
 	cfg["level"] = logger.DEBUG
 	cfg["buffer"] = 100000
 
-	logger.InitLogger(cfg)
+	logger.NewLogger(cfg)
 
 	logger.SetConsole()
 
@@ -51,4 +53,8 @@ func output() {
 func main() {
 	defer logger.Flush()
 	output()
+
+	ss, _ := os.Stat("logs/test-info.log")
+
+	fmt.Printf("file size = %d, fileinfo=%s\n", ss.Size(), filepath.Dir(ss.Name()))
 }
