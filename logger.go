@@ -148,6 +148,45 @@ func directory(dir string) {
 	}
 }
 
+func _write(out logger, file *os.File, level int, format string, args ...interface{}) {
+
+	if out.getLevel() > level {
+		return
+	}
+
+	switch out.(type) {
+
+	case *logConsole:
+
+		fmt.Fprintf(
+			file,
+			fmt.Sprintf(
+				"%s [%s] %s %s",
+				getTimeLayout(),
+				getLevelString(level),
+				getCallerStackInfo(),
+				format,
+			),
+			args...,
+		)
+
+	case *logFile:
+		wg.Add(1) // 需要放在管道输入前,Done在管道输出后
+
+		fileChan <- map[*os.File]string{
+			file: fmt.Sprintf(fmt.Sprintf(
+				"%s [%s] %s %s",
+				getTimeLayout(),
+				getLevelString(level),
+				getCallerStackInfo(),
+				format,
+			), args...),
+		}
+
+	default:
+	}
+}
+
 func _asyncWrite() {
 	for {
 		select {
@@ -179,45 +218,6 @@ func _rotateFile(file *os.File) (new *os.File) {
 		panic(err)
 	}
 	return new
-}
-
-func _write(out logger, file *os.File, level int, format string, args ...interface{}) {
-
-	if out.getLevel() > level {
-		return
-	}
-
-	switch out.(type) {
-
-	case *logConsole:
-
-		fmt.Fprintf(
-			file,
-			fmt.Sprintf(
-				"%s [%s] %s %s",
-				getTimeLayout(),
-				getLevelString(level),
-				getCallerStackInfo(),
-				format,
-			),
-			args...,
-		)
-
-	case *logFile:
-
-		fileChan <- map[*os.File]string{
-			file: fmt.Sprintf(fmt.Sprintf(
-				"%s [%s] %s %s",
-				getTimeLayout(),
-				getLevelString(level),
-				getCallerStackInfo(),
-				format,
-			), args...),
-		}
-		wg.Add(1)
-
-	default:
-	}
 }
 
 // NewLogger ?
@@ -324,6 +324,7 @@ func openNew(name string) (*os.File, error) {
 
 	mode := os.FileMode(0644)
 	info, err := os.Stat(name)
+
 	if err == nil {
 		mode = info.Mode()
 		newname := backupName(name, true)
