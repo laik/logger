@@ -25,7 +25,7 @@ func output() {
 	cfg["buffer"] = 100000
 
 	logger.NewLogger(cfg)
-	logger.SetMaxSizeMb(2)
+	logger.SetMaxSizeMb(1)
 	logger.SetConsole()
 
 	logger.Debug("test debug log out %s\n", "test1")
