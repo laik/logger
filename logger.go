@@ -473,7 +473,7 @@ func (lc *logConsole) error(format string, args ...interface{}) {
 }
 
 func (lc *logConsole) fatal(format string, args ...interface{}) {
-	_write(lc, lc.file, FATAL, format, args...)
+	_write(lc, lc.warn, FATAL, format, args...)
 }
 
 func (lc *logConsole) close() {}
