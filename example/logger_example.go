@@ -1,10 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"path/filepath"
-
 	logger "github.com/laik/logger"
 )
 
@@ -12,10 +8,10 @@ import (
 	后续实现功能:
 	[√]	1.要初始化2个实例来调用改成一个方法(标准输出窗口控制开关) 日志库的封装
 	[√]	2.目录不存在问题
-	[]	3.日志分割
+	[√]	3.日志分割 // 当前以mb分割
 	[√]	4.单例模式(防止在多个层级初始化)
 	[√]	5.异步写日志
-	[]  6.切分方式(小时/天/星期/月/体积)
+	[X]  6.切分方式(小时/天/星期/月/体积) //discard
 	[√] 7.启动备份上一次的日志文件
 */
 
@@ -29,7 +25,7 @@ func output() {
 	cfg["buffer"] = 100000
 
 	logger.NewLogger(cfg)
-
+	logger.SetMaxSizeMb(1)
 	logger.SetConsole()
 
 	logger.Debug("test debug log out %s\n", "test1")
@@ -41,20 +37,27 @@ func output() {
 
 	logger.UnsetConsole()
 
-	logger.Debug("test debug log out %s\n", "test2")
-	logger.Trace("test trace log out %s\n", "test2")
-	logger.Info("test info log out %s\n", "test2")
-	logger.Warn("test warn log out %s\n", "test2")
-	logger.Error("test error log out %s\n", "test2")
-	logger.Fatal("test fatal log out %s\n", "test2")
+	for i := 0; i < 8192; i++ {
+		logger.Debug("test debug log out %s\n", "test2")
+		logger.Trace("test trace log out %s\n", "test2")
+		logger.Info("test info log out %s\n", "test2")
+		logger.Warn("test warn log out %s\n", "test2")
+		logger.Error("test error log out %s\n", "test2")
+		logger.Fatal("test fatal log out %s\n", "test2")
+	}
+
+	/*
+		output:
+			1.0M    logs/test-info-2018-06-11T15-23-22.512.log
+			1.0M    logs/test-info-2018-06-11T15-23-22.642.log
+			792K    logs/test-info.log
+			1.0M    logs/test-warn-2018-06-11T15-23-22.639.log
+			420K    logs/test-warn.log
+	*/
 
 }
 
 func main() {
 	defer logger.Flush()
 	output()
-
-	ss, _ := os.Stat("logs/test-info.log")
-
-	fmt.Printf("file size = %d, fileinfo=%s\n", ss.Size(), filepath.Dir(ss.Name()))
 }

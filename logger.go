@@ -36,8 +36,8 @@ var (
 	consoleOutPut    bool
 	fileChan         chan map[*os.File]string
 	wg               sync.WaitGroup
-	megabyte         = 1024 * 1024
-	backupTimeFormat = "2006-01-02T15-04-05.000"
+	megabyteSize     int64 = 100 * 1024 * 1024
+	backupTimeFormat       = "2006-01-02T15-04-05.000"
 )
 
 // logger define golbal interface
@@ -59,15 +59,16 @@ func SetConsole() { consoleOutPut = true }
 // UnsetConsole ?
 func UnsetConsole() { consoleOutPut = false }
 
+// SetMaxSizeMb default maxsize 100Mb
+func SetMaxSizeMb(size int64) { megabyteSize = size * 1024 * 1024 }
+
 // Flush ?
 func Flush() {
 
 	wg.Wait()
 
 	for _, log := range logs {
-		if lf, ok := log.(*logFile); ok {
-			lf.close()
-		}
+		log.close()
 	}
 }
 
@@ -160,6 +161,24 @@ func _asyncWrite() {
 		default:
 		}
 	}
+}
+
+func _rotateFile(file *os.File) (new *os.File) {
+
+	info, err := file.Stat()
+	if err != nil {
+		panic(err)
+	}
+
+	if info.Size() < megabyteSize {
+		return file
+	}
+
+	new, err = openNew(file.Name())
+	if err != nil {
+		panic(err)
+	}
+	return new
 }
 
 func _write(out logger, file *os.File, level int, format string, args ...interface{}) {
@@ -301,17 +320,6 @@ func Error(format string, args ...interface{}) { _out(ERROR, format, args...) }
 // Fatal ?
 func Fatal(format string, args ...interface{}) { _out(FATAL, format, args...) }
 
-// logFile output info to file [info,warn]
-type logFile struct {
-	level int
-	path  string
-	name  string
-
-	file *os.File
-
-	warn *os.File
-}
-
 func openNew(name string) (*os.File, error) {
 
 	mode := os.FileMode(0644)
@@ -333,17 +341,6 @@ func openNew(name string) (*os.File, error) {
 	return f, err
 }
 
-// fileNew opens a new log file for writing, moving any old log file out of the
-func (lf *logFile) fileNew() (err error) {
-	lf.file, err = openNew(fmt.Sprintf("%s%s-info.log", lf.path, lf.name))
-	return err
-}
-
-func (lf *logFile) warnNew() (err error) {
-	lf.warn, err = openNew(fmt.Sprintf("%s%s-warn.log", lf.path, lf.name))
-	return err
-}
-
 func backupName(name string, local bool) string {
 	dir := filepath.Dir(name)
 	filename := filepath.Base(name)
@@ -357,6 +354,27 @@ func backupName(name string, local bool) string {
 	return filepath.Join(dir, fmt.Sprintf("%s-%s%s", prefix, timestamp, ext))
 }
 
+// logFile output info to file [info,warn]
+type logFile struct {
+	level int
+	path  string
+	name  string
+	file  *os.File
+	warn  *os.File
+	lock  *sync.Mutex
+}
+
+// fileNew opens a new log file for writing, moving any old log file out of the
+func (lf *logFile) fileNew() (err error) {
+	lf.file, err = openNew(fmt.Sprintf("%s%s-info.log", lf.path, lf.name))
+	return err
+}
+
+func (lf *logFile) warnNew() (err error) {
+	lf.warn, err = openNew(fmt.Sprintf("%s%s-warn.log", lf.path, lf.name))
+	return err
+}
+
 // NewLogFile ?
 func newLogFile(level int, path string, file string) logger {
 
@@ -367,10 +385,17 @@ func newLogFile(level int, path string, file string) logger {
 		level: level,
 		path:  path,
 		name:  file,
+		lock:  &sync.Mutex{},
 	}
 
-	logfile.fileNew()
-	logfile.warnNew()
+	err := logfile.fileNew()
+	if err != nil {
+		panic(err)
+	}
+	err = logfile.warnNew()
+	if err != nil {
+		panic(err)
+	}
 
 	return logfile
 }
@@ -387,30 +412,53 @@ func (lf *logFile) getLevel() int {
 }
 
 func (lf *logFile) debug(format string, args ...interface{}) {
+	lf.lock.Lock()
+	defer lf.lock.Unlock()
+	lf.file = _rotateFile(lf.file)
 	_write(lf, lf.file, DEBUG, format, args...)
 }
 
 func (lf *logFile) trace(format string, args ...interface{}) {
+	lf.lock.Lock()
+	defer lf.lock.Unlock()
+	lf.file = _rotateFile(lf.file)
 	_write(lf, lf.file, TRACE, format, args...)
 }
 
 func (lf *logFile) info(format string, args ...interface{}) {
+	lf.lock.Lock()
+	defer lf.lock.Unlock()
+	lf.file = _rotateFile(lf.file)
 	_write(lf, lf.file, INFO, format, args...)
 }
 
 func (lf *logFile) wran(format string, args ...interface{}) {
+	lf.lock.Lock()
+	defer lf.lock.Unlock()
+	lf.file = _rotateFile(lf.file)
 	_write(lf, lf.file, WARN, format, args...)
 }
 
 func (lf *logFile) error(format string, args ...interface{}) {
+	lf.lock.Lock()
+	defer lf.lock.Unlock()
+	lf.warn = _rotateFile(lf.warn)
 	_write(lf, lf.warn, ERROR, format, args...)
 }
 
 func (lf *logFile) fatal(format string, args ...interface{}) {
+	lf.lock.Lock()
+	defer lf.lock.Unlock()
+	lf.warn = _rotateFile(lf.warn)
 	_write(lf, lf.warn, FATAL, format, args...)
 }
 
-func (lf *logFile) close() { lf.file.Close(); lf.warn.Close() }
+func (lf *logFile) close() {
+	lf.lock.Lock()
+	defer lf.lock.Unlock()
+	lf.file.Close()
+	lf.warn.Close()
+}
 
 // logConsole
 type logConsole struct {
@@ -457,6 +505,6 @@ func (lc *logConsole) fatal(format string, args ...interface{}) {
 	_write(lc, lc.warn, FATAL, format, args...)
 }
 
-func (lc *logConsole) close() {}
+func (lc *logConsole) close() { lc.file.Close() }
 
 func (lc *logConsole) getLevel() int { return lc.level }
