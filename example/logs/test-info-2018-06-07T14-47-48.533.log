@@ -1,8 +1,0 @@
-2018-06-07 14:47:24.166 [DEBUG] <logger_example.go.output:34> => test debug log out test1
-2018-06-07 14:47:24.166 [TRACE] <logger_example.go.output:35> => test trace log out test1
-2018-06-07 14:47:24.166 [INFO] <logger_example.go.output:36> => test info log out test1
-2018-06-07 14:47:24.166 [WARN] <logger_example.go.output:37> => test warn log out test1
-2018-06-07 14:47:24.166 [DEBUG] <logger_example.go.output:43> => test debug log out test2
-2018-06-07 14:47:24.166 [TRACE] <logger_example.go.output:44> => test trace log out test2
-2018-06-07 14:47:24.166 [INFO] <logger_example.go.output:45> => test info log out test2
-2018-06-07 14:47:24.166 [WARN] <logger_example.go.output:46> => test warn log out test2

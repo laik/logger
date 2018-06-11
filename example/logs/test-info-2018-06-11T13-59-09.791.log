@@ -1,0 +1,8 @@
+2018-06-11 13:59:07.011 [DEBUG] <logger_example.go.output:35> => test debug log out test1
+2018-06-11 13:59:07.011 [TRACE] <logger_example.go.output:36> => test trace log out test1
+2018-06-11 13:59:07.011 [INFO] <logger_example.go.output:37> => test info log out test1
+2018-06-11 13:59:07.011 [WARN] <logger_example.go.output:38> => test warn log out test1
+2018-06-11 13:59:07.011 [DEBUG] <logger_example.go.output:44> => test debug log out test2
+2018-06-11 13:59:07.011 [TRACE] <logger_example.go.output:45> => test trace log out test2
+2018-06-11 13:59:07.011 [INFO] <logger_example.go.output:46> => test info log out test2
+2018-06-11 13:59:07.011 [WARN] <logger_example.go.output:47> => test warn log out test2

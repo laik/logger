@@ -83,6 +83,25 @@ func getTimeLayout() string {
 	return time.Now().Format(LAYOUT)
 }
 
+func _getLevelOut(level int, log logger) (out func(string, ...interface{})) {
+	switch level {
+	case DEBUG:
+		out = log.debug
+	case TRACE:
+		out = log.trace
+	case INFO:
+		out = log.info
+	case WARN:
+		out = log.wran
+	case ERROR:
+		out = log.error
+	case FATAL:
+		out = log.fatal
+	default:
+	}
+	return out
+}
+
 func getLevelString(level int) (out string) {
 	switch level {
 	case TRACE:
@@ -192,10 +211,9 @@ func NewLogger(cfg map[string]interface{}) {
 	}
 
 	var (
-		level   int
-		logPth  string
-		logFile string
-
+		level       int
+		logPth      string
+		logFile     string
 		logChanSize int
 	)
 
@@ -249,25 +267,6 @@ func NewLogger(cfg map[string]interface{}) {
 
 }
 
-func _getLevelOut(level int, log logger) (out func(string, ...interface{})) {
-	switch level {
-	case DEBUG:
-		out = log.debug
-	case TRACE:
-		out = log.trace
-	case INFO:
-		out = log.info
-	case WARN:
-		out = log.wran
-	case ERROR:
-		out = log.error
-	case FATAL:
-		out = log.fatal
-	default:
-	}
-	return out
-}
-
 func _out(level int, format string, args ...interface{}) {
 
 	if len(logs) < 1 || logs == nil {
@@ -313,10 +312,7 @@ type logFile struct {
 	warn *os.File
 }
 
-// fileNew opens a new log file for writing, moving any old log file out of the
-func (lf *logFile) fileNew() error {
-
-	name := fmt.Sprintf("%s%s-info.log", lf.path, lf.name)
+func openNew(name string) (*os.File, error) {
 
 	mode := os.FileMode(0644)
 	info, err := os.Stat(name)
@@ -324,43 +320,28 @@ func (lf *logFile) fileNew() error {
 		mode = info.Mode()
 		newname := backupName(name, true)
 		if err := os.Rename(name, newname); err != nil {
-			return fmt.Errorf("can't rename log file: %s", err)
+			return nil, fmt.Errorf("can't rename log file: %s", err)
 		}
 	}
 
 	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
 
 	if err != nil {
-		return fmt.Errorf("can't open new logfile: %s", err)
+		return f, fmt.Errorf("can't open new logfile: %s", err)
 	}
-	lf.file = f
 
-	return nil
+	return f, err
 }
 
-func (lf *logFile) warnNew() error {
+// fileNew opens a new log file for writing, moving any old log file out of the
+func (lf *logFile) fileNew() (err error) {
+	lf.file, err = openNew(fmt.Sprintf("%s%s-info.log", lf.path, lf.name))
+	return err
+}
 
-	warnfileName := fmt.Sprintf("%s%s-warn.log", lf.path, lf.name)
-
-	mode := os.FileMode(0644)
-	info, err := os.Stat(warnfileName)
-	if err == nil {
-		mode = info.Mode()
-		newname := backupName(warnfileName, true)
-		if err := os.Rename(warnfileName, newname); err != nil {
-			panic(fmt.Errorf("can't rename warnfile file: %s", err))
-		}
-	}
-
-	warnfile, err := os.OpenFile(warnfileName, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
-
-	if err != nil {
-		panic(fmt.Errorf("can't open new warnfile: %s", err))
-	}
-
-	lf.warn = warnfile
-
-	return nil
+func (lf *logFile) warnNew() (err error) {
+	lf.warn, err = openNew(fmt.Sprintf("%s%s-warn.log", lf.path, lf.name))
+	return err
 }
 
 func backupName(name string, local bool) string {
