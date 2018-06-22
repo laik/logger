@@ -34,6 +34,7 @@ var (
 	_                logger   = (*logConsole)(nil)
 	logs             []logger //sharding instance
 	consoleOutPut    bool
+	fileOutPut       = true
 	fileChan         chan map[*os.File]string
 	wg               sync.WaitGroup
 	megabyteSize     int64 = 100 * 1024 * 1024
@@ -58,6 +59,12 @@ func SetConsole() { consoleOutPut = true }
 
 // UnsetConsole ?
 func UnsetConsole() { consoleOutPut = false }
+
+// SetOutFile open file output defualt is open
+func SetOutFile() { fileOutPut = true }
+
+// UnSetOutFile k8s app close file output
+func UnSetOutFile() { fileOutPut = false }
 
 // SetMaxSizeMb default maxsize 100Mb
 func SetMaxSizeMb(size int64) { megabyteSize = size * 1024 * 1024 }
@@ -276,12 +283,12 @@ func NewLogger(cfg map[string]interface{}) {
 		logChanSize = c
 	}
 
-	fileChan = make(chan map[*os.File]string, logChanSize)
-
+	//console
 	logs = append(logs, newLogConsole(level))
 
+	//file
+	fileChan = make(chan map[*os.File]string, logChanSize)
 	logs = append(logs, newLogFile(level, logPth, logFile))
-
 	go _asyncWrite()
 
 }
@@ -296,7 +303,7 @@ func _out(level int, format string, args ...interface{}) {
 		if _, ok := log.(*logConsole); ok && consoleOutPut {
 			(_getLevelOut(level, log))(format, args...)
 		}
-		if _, ok := log.(*logFile); ok {
+		if _, ok := log.(*logFile); ok && fileOutPut {
 			(_getLevelOut(level, log))(format, args...)
 		}
 	}
