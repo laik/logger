@@ -60,10 +60,7 @@ func SetConsole() { consoleOutPut = true }
 // UnsetConsole ?
 func UnsetConsole() { consoleOutPut = false }
 
-// SetOutFile open file output defualt is open
-func SetOutFile() { fileOutPut = true }
-
-// UnSetOutFile k8s app close file output
+// UnSetOutFile kubernetes app close file output
 func UnSetOutFile() { fileOutPut = false }
 
 // SetMaxSizeMb default maxsize 100Mb
@@ -287,10 +284,11 @@ func NewLogger(cfg map[string]interface{}) {
 	logs = append(logs, newLogConsole(level))
 
 	//file
-	fileChan = make(chan map[*os.File]string, logChanSize)
-	logs = append(logs, newLogFile(level, logPth, logFile))
-	go _asyncWrite()
-
+	if fileOutPut {
+		fileChan = make(chan map[*os.File]string, logChanSize)
+		logs = append(logs, newLogFile(level, logPth, logFile))
+		go _asyncWrite()
+	}
 }
 
 func _out(level int, format string, args ...interface{}) {
@@ -340,7 +338,7 @@ func openNew(name string) (*os.File, error) {
 		}
 	}
 
-	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
+	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_APPEND, mode)
 
 	if err != nil {
 		return f, fmt.Errorf("can't open new logfile: %s", err)
@@ -464,8 +462,13 @@ func (lf *logFile) fatal(format string, args ...interface{}) {
 func (lf *logFile) close() {
 	lf.lock.Lock()
 	defer lf.lock.Unlock()
-	lf.file.Close()
-	lf.warn.Close()
+	switch {
+	case lf.file != nil:
+		lf.file.Close()
+		fallthrough
+	case lf.warn != nil:
+		lf.warn.Close()
+	}
 }
 
 // logConsole
@@ -513,6 +516,10 @@ func (lc *logConsole) fatal(format string, args ...interface{}) {
 	_write(lc, lc.warn, FATAL, format, args...)
 }
 
-func (lc *logConsole) close() { lc.file.Close() }
+func (lc *logConsole) close() {
+	if lc.file != nil {
+		lc.file.Close()
+	}
+}
 
 func (lc *logConsole) getLevel() int { return lc.level }
