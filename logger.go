@@ -54,11 +54,8 @@ type logger interface {
 	getLevel() int
 }
 
-// SetConsole ?
+// SetConsole kubernetes app is default with the options
 func SetConsole() { consoleOutPut = true }
-
-// UnsetConsole ?
-func UnsetConsole() { consoleOutPut = false }
 
 // UnSetOutFile kubernetes app close file output
 func UnSetOutFile() { fileOutPut = false }
@@ -68,9 +65,7 @@ func SetMaxSizeMb(size int64) { megabyteSize = size * 1024 * 1024 }
 
 // Flush ?
 func Flush() {
-
 	wg.Wait()
-
 	for _, log := range logs {
 		log.close()
 	}
@@ -201,7 +196,6 @@ func _asyncWrite() {
 				}
 				wg.Done()
 			}
-		default:
 		}
 	}
 }

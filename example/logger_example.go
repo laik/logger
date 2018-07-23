@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	logger "github.com/laik/logger"
 )
 
@@ -24,9 +26,9 @@ func output() {
 	cfg["level"] = logger.DEBUG
 	cfg["buffer"] = 100000
 
+	logger.UnSetOutFile()
+	logger.SetMaxSizeMb(1)
 	logger.NewLogger(cfg)
-	logger.SetMaxSizeMb(3)
-	logger.SetConsole()
 
 	logger.Debug("test debug log out %s\n", "test1")
 	logger.Trace("test trace log out %s\n", "test1")
@@ -35,8 +37,8 @@ func output() {
 	logger.Error("test error log out %s\n", "test1")
 	logger.Fatal("test fatal log out %s\n", "test1")
 
-	logger.UnsetConsole()
-
+	logger.SetConsole()
+	//sa
 	for i := 0; i < 1000; i++ {
 		logger.Debug("test debug log out %s\n", "test2")
 		logger.Trace("test trace log out %s\n", "test2")
@@ -44,6 +46,15 @@ func output() {
 		logger.Warn("test warn log out %s\n", "test2")
 		logger.Error("test error log out %s\n", "test2")
 		logger.Fatal("test fatal log out %s\n", "test2")
+	}
+
+	for i := 0; i < 1000; i++ {
+		logger.Debug("test debug log out %s\n", "test3")
+		logger.Trace("test trace log out %s\n", "test3")
+		logger.Info("test info log out %s\n", "test3")
+		logger.Warn("test warn log out %s\n", "test3")
+		logger.Error("test error log out %s\n", "test3")
+		logger.Fatal("test fatal log out %s\n", "test3")
 	}
 
 	/*
@@ -60,4 +71,5 @@ func output() {
 func main() {
 	defer logger.Flush()
 	output()
+	fmt.Println("123")
 }
