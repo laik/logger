@@ -124,13 +124,9 @@ func getLevelString(level int) (out string) {
 func getCallerStackInfo() (format string) {
 	_pc, _file, _line, ok := runtime.Caller(6)
 	if ok {
-
 		_func := runtime.FuncForPC(_pc).Name()
-
 		funcName := strings.Split(path.Base(_func), ".")
-
 		fileName := strings.Split(path.Base(_file), string(os.PathSeparator))
-
 		format = fmt.Sprintf("<%s.%s:%d> =>", fileName[len(fileName)-1], funcName[len(funcName)-1], _line)
 	}
 	return format
@@ -142,21 +138,17 @@ func directory(dir string) {
 		err := os.Mkdir(dir, os.ModePerm)
 		if err != nil {
 			fmt.Fprintf(os.Stdout, "directory create error %s\n", dir)
-			os.Exit(1)
 		}
 	}
 }
 
 func _write(out logger, file *os.File, level int, format string, args ...interface{}) {
-
 	if out.getLevel() > level {
 		return
 	}
 
 	switch out.(type) {
-
 	case *logConsole:
-
 		fmt.Fprintf(
 			file,
 			fmt.Sprintf(
@@ -171,7 +163,6 @@ func _write(out logger, file *os.File, level int, format string, args ...interfa
 
 	case *logFile:
 		wg.Add(1) // 需要放在管道输入前,Done在管道输出后
-
 		fileChan <- map[*os.File]string{
 			file: fmt.Sprintf(fmt.Sprintf(
 				"%s [%s] %s %s",
@@ -201,16 +192,13 @@ func _asyncWrite() {
 }
 
 func _rotateFile(file *os.File) (new *os.File) {
-
 	info, err := file.Stat()
 	if err != nil {
 		panic(err)
 	}
-
 	if info.Size() < megabyteSize {
 		return file
 	}
-
 	new, err = openNew(file.Name())
 	if err != nil {
 		panic(err)
@@ -218,22 +206,17 @@ func _rotateFile(file *os.File) (new *os.File) {
 	return new
 }
 
-// NewLogger ?
 func NewLogger(cfg map[string]interface{}) {
-
 	exists := shardingInstance()
-
 	if exists {
 		return
 	}
-
 	var (
 		level       int
 		logPth      string
 		logFile     string
 		logChanSize int
 	)
-
 	if _level, ok := cfg["level"]; !ok {
 		level = DEBUG
 	} else {
@@ -243,9 +226,8 @@ func NewLogger(cfg map[string]interface{}) {
 		}
 		level = v
 	}
-
 	if _logPth, ok := cfg["path"]; !ok {
-		panic("configure not define log file path")
+		_logPth = "logs/"
 	} else {
 		p, ok := _logPth.(string)
 		if !ok {
@@ -253,9 +235,11 @@ func NewLogger(cfg map[string]interface{}) {
 		}
 		logPth = p
 	}
-
 	if _file, ok := cfg["file"]; !ok {
-		panic("configure not define log file value")
+		_, _tmpfile, _, ok := runtime.Caller(2)
+		if ok {
+			_file = strings.Split(path.Base(_tmpfile), string(os.PathSeparator))
+		}
 	} else {
 		f, ok := _file.(string)
 		if !ok {
@@ -263,7 +247,6 @@ func NewLogger(cfg map[string]interface{}) {
 		}
 		logFile = f
 	}
-
 	if _chan, ok := cfg["buffer"]; !ok {
 		logChanSize = 10000
 	} else {
@@ -276,7 +259,6 @@ func NewLogger(cfg map[string]interface{}) {
 
 	//console
 	logs = append(logs, newLogConsole(level))
-
 	//file
 	if fileOutPut {
 		fileChan = make(chan map[*os.File]string, logChanSize)
@@ -286,11 +268,9 @@ func NewLogger(cfg map[string]interface{}) {
 }
 
 func _out(level int, format string, args ...interface{}) {
-
 	if len(logs) < 1 || logs == nil {
 		panic("logger instance not init...")
 	}
-
 	for _, log := range logs {
 		if _, ok := log.(*logConsole); ok && consoleOutPut {
 			(_getLevelOut(level, log))(format, args...)
@@ -301,10 +281,10 @@ func _out(level int, format string, args ...interface{}) {
 	}
 }
 
-// Debug ?
+// Debug
 func Debug(format string, args ...interface{}) { _out(DEBUG, format, args...) }
 
-// Trace ?
+// Trace
 func Trace(format string, args ...interface{}) { _out(TRACE, format, args...) }
 
 // Info ?
@@ -377,10 +357,8 @@ func (lf *logFile) warnNew() (err error) {
 
 // NewLogFile ?
 func newLogFile(level int, path string, file string) logger {
-
 	// directory check if not exists then created
 	directory(path)
-
 	logfile := &logFile{
 		level: level,
 		path:  path,
